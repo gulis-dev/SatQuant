@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+*.tflite
+*.onnx
+*.pt
+yolov8*_saved_model/
+.idea/
+DEBUG_CROP.jpg
+*.npy
