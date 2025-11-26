@@ -58,7 +58,7 @@ class FocusQuantizer:
         # Enable default optimizations (quantization)
         converter.optimizations = [tf.lite.Optimize.DEFAULT]
         # Inject our custom Focus Calibration dataset
-        converter.representative_dataset = _tf_gen
+        # converter.representative_dataset = _tf_gen # This line is moved into the full_int8 block
 
         # 3. Configure Hardware Compatibility
         if mode == "full_int8":
@@ -68,15 +68,15 @@ class FocusQuantizer:
             # Enforce integer input/output interface to avoid runtime casting
             converter.inference_input_type = tf.int8
             converter.inference_output_type = tf.int8
+            # Calibration is required for full_int8
+            converter.representative_dataset = _tf_gen
 
         elif mode == "mixed":
-            print("[CORE] Mode: MIXED PRECISION (CPU/GPU)")
-            # Allow hybrid operators (Float32 + Int8) for CPU execution
-            converter.target_spec.supported_ops = [
-                tf.lite.OpsSet.TFLITE_BUILTINS_INT8,
-                tf.lite.OpsSet.TFLITE_BUILTINS
-            ]
-
+            print("[CORE] Mode: MIXED PRECISION (Dynamic Range - Weights INT8, Activations Float)")
+            # Dynamic Range Quantization (No representative dataset needed)
+            # This preserves float32 activations, avoiding the fused-head quantization issue.
+            converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
+            
         else:
             raise ValueError("Unknown mode! Use 'full_int8' or 'mixed'")
 
