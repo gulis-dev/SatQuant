@@ -29,7 +29,7 @@ class DotaDataset:
         to Axis-Aligned Bounding Box (AABB).
         """
         parts = line.strip().split()
-        if len(parts) < 9: return None  # Skip malformed lines
+        if len(parts) < 9: return None
 
         # Parse 8 coordinates (x1, y1 ... x4, y4)
         coords = list(map(float, parts[:8]))
