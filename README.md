@@ -57,9 +57,9 @@ By mathematically narrowing the dynamic range ($r_{max} - r_{min}$) to the objec
 | :--- | :--- | :--- | :--- |
 | **FP32 Baseline** | 100% (Ref) | 12.1 MB | GPU / CPU |
 | **Standard TFLite** | 0% (Signal Loss) | 3.2 MB | Edge TPU / CPU |
-| **SatQuant INT8** | **~76% (Recovered)** | **3.2 MB** | **Edge TPU / CPU** |
+| **SatQuant Optimized** | **~76% (Recovered)** | **3.2 MB** | **Edge TPU / CPU*** |
 
-*(Note: "Standard TFLite" often results in 0 confidence for small objects due to aggressive dynamic range compression.)*
+*\*Note: Benchmark results achieved using Mixed Precision (W8A32) to maximize accuracy on small objects. Strict INT8 mode is available for Edge TPU but may yield different accuracy trade-offs.*
 
 ## Installation
 
