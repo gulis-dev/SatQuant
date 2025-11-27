@@ -4,7 +4,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![TensorFlow](https://img.shields.io/badge/TensorFlow-Lite-orange?logo=tensorflow&logoColor=white)](https://www.tensorflow.org/lite)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)]([https://colab.research.google.com/](https://colab.research.google.com/github/gulis-dev/SatQuant/blob/main/assets/notebook.ipynb))
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gulis-dev/SatQuant/blob/main/assets/notebook.ipynb)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0077B5?style=flat&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/oskar-andrukiewicz/)
 
 **Domain-Adaptive Post-Training Quantization (PTQ) for Satellite & Aerial Imagery.**
