@@ -66,30 +66,27 @@ class DotaDataset:
 
                 xmin, ymin, xmax, ymax = box
 
-                # Calculate center and crop dimensions
-                cx = (xmin + xmax) // 2
-                cy = (ymin + ymax) // 2
-
-                # We define the crop size based on model input (e.g., 640x640)
-                half_size = self.crop_size // 2
-
-                # Clamp coordinates to image boundaries to prevent errors
-                c_xmin = max(0, cx - half_size)
-                c_ymin = max(0, cy - half_size)
-                c_xmax = min(w_img, cx + half_size)
-                c_ymax = min(h_img, cy + half_size)
-
-                # Extract the crop
+                # --- FOCUS CALIBRATION STRATEGY ---
+                # 1. Determine object size
+                obj_w = xmax - xmin
+                obj_h = ymax - ymin
+                
+                # 2. Add context padding (padding_pct)
+                # This ensures the model sees the object boundary and immediate background
+                pad_w = int(obj_w * self.padding_pct)
+                pad_h = int(obj_h * self.padding_pct)
+                
+                c_xmin = max(0, xmin - pad_w)
+                c_ymin = max(0, ymin - pad_h)
+                c_xmax = min(w_img, xmax + pad_w)
+                c_ymax = min(h_img, ymax + pad_h)
+                
+                # 3. Extract the context-aware crop
                 crop = img[c_ymin:c_ymax, c_xmin:c_xmax]
-
-                # --- STRATEGY: RESIZE INSTEAD OF PADDING ---
-                # If the crop is smaller than target size (e.g., near edges),
-                # we resize it. Zero-padding would introduce artificial black pixels (0),
-                # corrupting the calibration histogram (ZeroPoint shift).
-                if crop.shape[0] != self.crop_size or crop.shape[1] != self.crop_size:
+                
+                # 4. Resize to Model Input Size (e.g., 640x640)
+                if crop.size > 0:
                     crop = cv2.resize(crop, (self.crop_size, self.crop_size), interpolation=cv2.INTER_LINEAR)
-
-                # Convert BGR (OpenCV default) to RGB (TensorFlow default)
-                crop = cv2.cvtColor(crop, cv2.COLOR_BGR2RGB)
-
-                yield crop
+                    # Convert BGR (OpenCV default) to RGB (TensorFlow default)
+                    crop = cv2.cvtColor(crop, cv2.COLOR_BGR2RGB)
+                    yield crop

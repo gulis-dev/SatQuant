@@ -27,7 +27,8 @@ Standard quantization algorithms (e.g., TFLite default calibration) optimize par
 - **Artifact-Free Processing:** Implements a resizing strategy that prevents zero-padding artifacts from corrupting the quantization `ZeroPoint`.
 - **Hardware-Aware:**
     - `full_int8`: Enforces strict INT8 I/O for Google Coral Edge TPU / NPU.
-    - `mixed`: Hybrid FP32/INT8 execution for CPU-bound devices.
+    - `int16x8`: **Recommended for YOLO.** Uses INT16 activations for high precision (fixing 0 mAP issues) while keeping weights INT8.
+    - `mixed`: Hybrid FP32/INT8 execution for CPU-bound devices (Dynamic Range).
 
 ## Mathematical Principle
 
@@ -103,7 +104,7 @@ quantizer = FocusQuantizer(model_path="./yolov8n_saved_model")
 quantizer.convert(
     dataset=dataset,
     output_path="yolov8_sat_optimized.tflite",
-    mode="full_int8",
+    mode="int16x8", # Recommended for YOLO to avoid accuracy loss
     normalize_input=True  # Set False if your model expects raw 0-255 pixels
 )
 ```

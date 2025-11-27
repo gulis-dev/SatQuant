@@ -71,6 +71,17 @@ class FocusQuantizer:
             # Calibration is required for full_int8
             converter.representative_dataset = _tf_gen
 
+        elif mode == "int16x8":
+            print("[CORE] Mode: INT16x8 (High Precision - Best for YOLO/Regression)")
+            # Weights are INT8 (small size), Activations are INT16 (high precision)
+            # This fixes the "0 mAP" issue on YOLO models by providing 65k quantization levels for regression heads.
+            converter.target_spec.supported_ops = [
+                tf.lite.OpsSet.TFLITE_BUILTINS_INT8,
+                tf.lite.OpsSet.EXPERIMENTAL_TFLITE_BUILTINS_ACTIVATIONS_INT16_WEIGHTS_INT8
+            ]
+            # Note: Edge TPU might not support INT16 activations fully, falling back to CPU for those ops.
+            converter.representative_dataset = _tf_gen
+
         elif mode == "mixed":
             print("[CORE] Mode: MIXED PRECISION (Dynamic Range - Weights INT8, Activations Float)")
             # Dynamic Range Quantization (No representative dataset needed)
@@ -78,7 +89,7 @@ class FocusQuantizer:
             converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
             
         else:
-            raise ValueError("Unknown mode! Use 'full_int8' or 'mixed'")
+            raise ValueError("Unknown mode! Use 'full_int8', 'int16x8', or 'mixed'")
 
         # 4. Run Conversion
         try:

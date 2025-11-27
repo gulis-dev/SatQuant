@@ -20,7 +20,8 @@ quantizer = FocusQuantizer(model_path=MODEL_PATH)
 quantizer.convert(
     dataset=dataset,
     output_path="yolov8_satellite_quantized.tflite",
-    mode="full_int8" # or "mixed"
+    mode="int16x8", 
+    normalize_input=True 
 )
 
 print("Done!")
