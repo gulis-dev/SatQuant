@@ -19,9 +19,13 @@ class DotaDataset:
         self.padding_pct = padding_pct  # Context padding to preserve object-background contrast
 
         # Find all image files
-        # Support both jpg and png using glob character class
-        search_pattern = os.path.join(self.images_dir, "*.[jp][pn]g")
-        self.image_files = sorted(glob.glob(search_pattern))
+        extensions = ["*.jpg", "*.JPG", "*.png", "*.PNG", "*.jpeg", "*.JPEG"]
+        self.image_files = []
+        for ext in extensions:
+            self.image_files.extend(glob.glob(os.path.join(self.images_dir, ext)))
+        
+        # Remove duplicates and sort
+        self.image_files = sorted(list(set(self.image_files)))
         print(f"[DATA] Found {len(self.image_files)} images in {images_dir}")
 
     def _parse_dota_line(self, line: str) -> Tuple[int, int, int, int]:
@@ -78,27 +82,58 @@ class DotaDataset:
 
                 xmin, ymin, xmax, ymax = box
 
-                # --- FOCUS CALIBRATION STRATEGY ---
-                # 1. Determine object size
                 obj_w = xmax - xmin
                 obj_h = ymax - ymin
+                center_x = (xmin + xmax) // 2
+                center_y = (ymin + ymax) // 2
                 
-                # 2. Add context padding (padding_pct)
-                # This ensures the model sees the object boundary and immediate background
-                pad_w = int(obj_w * self.padding_pct)
-                pad_h = int(obj_h * self.padding_pct)
+                # 2. Determine square size based on largest dimension + padding
+                long_side = max(obj_w, obj_h)
                 
-                c_xmin = max(0, xmin - pad_w)
-                c_ymin = max(0, ymin - pad_h)
-                c_xmax = min(w_img, xmax + pad_w)
-                c_ymax = min(h_img, ymax + pad_h)
+                # side = long_side * (1 + 2 * self.padding_pct)
+                side = int(long_side * (1 + 2 * self.padding_pct))
+                half_side = side // 2
                 
-                # 3. Extract the context-aware crop
-                crop = img[c_ymin:c_ymax, c_xmin:c_xmax]
+                # 3. Calculate crop coordinates (can be out of bounds)
+                c_xmin = center_x - half_side
+                c_ymin = center_y - half_side
+                c_xmax = c_xmin + side
+                c_ymax = c_ymin + side
                 
-                # 4. Resize to Model Input Size (e.g., 640x640)
-                if crop.size > 0:
-                    crop = cv2.resize(crop, (self.crop_size, self.crop_size), interpolation=cv2.INTER_LINEAR)
+                # 4. Handle Image Boundaries
+                src_xmin = max(0, c_xmin)
+                src_ymin = max(0, c_ymin)
+                src_xmax = min(w_img, c_xmax)
+                src_ymax = min(h_img, c_ymax)
+                
+                # Check if the calculated crop is valid (non-empty)
+                if src_xmax <= src_xmin or src_ymax <= src_ymin:
+                    continue
+
+                crop_img = img[src_ymin:src_ymax, src_xmin:src_xmax]
+                
+                # 5. Pad if necessary (to maintain square shape and size)
+                pad_top = src_ymin - c_ymin
+                pad_bottom = c_ymax - src_ymax
+                pad_left = src_xmin - c_xmin
+                pad_right = c_xmax - src_xmax
+                
+                # Ensure non-negative
+                pad_top = max(0, pad_top)
+                pad_bottom = max(0, pad_bottom)
+                pad_left = max(0, pad_left)
+                pad_right = max(0, pad_right)
+                
+                if pad_top > 0 or pad_bottom > 0 or pad_left > 0 or pad_right > 0:
+                    crop_img = cv2.copyMakeBorder(
+                        crop_img, 
+                        pad_top, pad_bottom, pad_left, pad_right, 
+                        cv2.BORDER_REPLICATE
+                    )
+                
+                # 6. Resize to Model Input Size (e.g., 640x640)
+                if crop_img.size > 0:
+                    crop = cv2.resize(crop_img, (self.crop_size, self.crop_size), interpolation=cv2.INTER_LINEAR)
                     # Convert BGR (OpenCV default) to RGB (TensorFlow default)
                     crop = cv2.cvtColor(crop, cv2.COLOR_BGR2RGB)
                     yield crop
