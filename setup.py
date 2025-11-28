@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='satquant',
-    version='0.2.1',
+    version='0.2.2',
     description='Satellite Imagery Quantization Library with Focus Calibration',
     author='Oskar Andrukiewicz',
     packages=find_packages(),

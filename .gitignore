@@ -8,3 +8,5 @@ yolov8*_saved_model/
 .idea/
 DEBUG_CROP.jpg
 *.npy
+.pytest_cache
+.vscode
