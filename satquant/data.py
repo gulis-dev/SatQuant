@@ -2,7 +2,6 @@ import os
 import cv2
 import numpy as np
 import glob
-from pathlib import Path
 from typing import List, Generator, Tuple
 
 
@@ -14,13 +13,15 @@ class DotaDataset:
     """
 
     def __init__(self, images_dir: str, labels_dir: str, crop_size: int = 640, padding_pct: float = 0.2):
-        self.images_dir = Path(images_dir)
-        self.labels_dir = Path(labels_dir)
+        self.images_dir = images_dir
+        self.labels_dir = labels_dir
         self.crop_size = crop_size
         self.padding_pct = padding_pct  # Context padding to preserve object-background contrast
 
         # Find all image files
-        self.image_files = sorted(list(self.images_dir.glob("*.[jp][pn]g")))
+        # Support both jpg and png using glob character class
+        search_pattern = os.path.join(self.images_dir, "*.[jp][pn]g")
+        self.image_files = sorted(glob.glob(search_pattern))
         print(f"[DATA] Found {len(self.image_files)} images in {images_dir}")
 
     def _parse_dota_line(self, line: str) -> Tuple[int, int, int, int]:
@@ -29,7 +30,8 @@ class DotaDataset:
         to Axis-Aligned Bounding Box (AABB).
         """
         parts = line.strip().split()
-        if len(parts) < 9: return None
+        if len(parts) < 9:
+            return None
 
         # Parse 8 coordinates (x1, y1 ... x4, y4)
         coords = list(map(float, parts[:8]))
@@ -48,11 +50,18 @@ class DotaDataset:
         Implements 'Resize Strategy' to avoid zero-padding artifacts.
         """
         for img_path in self.image_files:
-            label_path = self.labels_dir / (img_path.stem + ".txt")
-            if not label_path.exists(): continue
+            # img_path is a string now
+            stem = os.path.splitext(os.path.basename(img_path))[0]
+            label_path = os.path.join(self.labels_dir, stem + ".txt")
+            
+            if not os.path.exists(label_path):
+                print(f"[DATA] No label found for image: {img_path}")
+                continue
 
-            img = cv2.imread(str(img_path))
-            if img is None: continue
+            img = cv2.imread(img_path)
+            if img is None:
+                print(f"[DATA] Failed to load image: {img_path}")
+                continue
             h_img, w_img, _ = img.shape
 
             with open(label_path, 'r') as f:
@@ -60,9 +69,12 @@ class DotaDataset:
 
             for line in lines:
                 # Skip DOTA metadata headers
-                if "imagesource" in line or "gsd" in line: continue
+                if "imagesource" in line or "gsd" in line:
+                    continue
                 box = self._parse_dota_line(line)
-                if box is None: continue
+                if box is None:
+                    print(f"[DATA] Failed to parse DOTA line: {line}")
+                    continue
 
                 xmin, ymin, xmax, ymax = box
 
