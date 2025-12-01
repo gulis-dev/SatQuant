@@ -29,6 +29,7 @@ Standard quantization algorithms (e.g., TFLite default calibration) optimize par
     - `full_int8`: Enforces strict INT8 I/O for Google Coral Edge TPU / NPU.
     - `int16x8`: **Recommended for YOLO.** Uses INT16 activations for high precision (fixing 0 mAP issues) while keeping weights INT8.
     - `mixed`: Hybrid FP32/INT8 execution for CPU-bound devices (Dynamic Range).
+- **CLI & Evaluation:** Built-in command line interface for easy conversion and evaluation of quantized models.
 
 ## Mathematical Principle
 
@@ -79,11 +80,30 @@ pip install git+[https://github.com/gulis-dev/satquant.git](https://github.com/g
 
 ## Usage
 
-### 1\. Data Preparation
+### 1. Command Line Interface (CLI) - Recommended
 
-Ensure your dataset follows the DOTA format (images + `.txt` label files).
+SatQuant provides a CLI for easy model conversion and evaluation.
 
-### 2\. Optimization Pipeline
+**Convert a Model:**
+```bash
+satquant convert \
+    --model ./yolov8n_saved_model \
+    --data ./dota_samples \
+    --output model_quant.tflite \
+    --mode int16x8
+```
+
+**Evaluate a Model:**
+```bash
+satquant evaluate \
+    --model model_quant.tflite \
+    --data ./dota_samples \
+    --num_samples 50
+```
+
+### 2. Python API
+
+If you need to integrate SatQuant into your Python scripts:
 
 ```python
 from satquant import FocusQuantizer, DotaDataset
@@ -120,6 +140,8 @@ quantizer.convert(
 
   - `satquant.data`: Handles OBB parsing, context padding, and crop generation.
   - `satquant.core`: Wraps TensorFlow Lite Converter with hardware-specific constraints.
+  - `satquant.evaluate`: Metrics and inference logic for TFLite models.
+  - `satquant.cli`: Command-line interface entry point.
 
 ## Disclaimer
 

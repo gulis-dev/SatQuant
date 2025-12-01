@@ -2,13 +2,19 @@ from setuptools import setup, find_packages
 
 setup(
     name='satquant',
-    version='0.2.2',
+    version='0.2.3',
     description='Satellite Imagery Quantization Library with Focus Calibration',
     author='Oskar Andrukiewicz',
     packages=find_packages(),
     install_requires=[
         'tensorflow',
         'numpy',
-        'opencv-python'
+        'opencv-python',
+        'tqdm'
     ],
+    entry_points={
+        'console_scripts': [
+            'satquant=satquant.cli:main',
+        ],
+    },
 )
