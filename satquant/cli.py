@@ -2,7 +2,7 @@ import argparse
 import logging
 import os
 from .core import FocusQuantizer
-from .data import DotaDataset
+from .data import DotaDataset, YoloDataset
 from .evaluate import evaluate_model
 
 # Configure logging
@@ -13,9 +13,10 @@ def convert_command(args):
     logger.info("Starting Conversion Pipeline...")
     
     # 1. Initialize Dataset
-    dataset = DotaDataset(
+    dataset_cls = YoloDataset if args.format == "yolo" else DotaDataset
+    dataset = dataset_cls(
         images_dir=os.path.join(args.data, "images"),
-        labels_dir=os.path.join(args.data, "labelTxt"),
+        labels_dir=os.path.join(args.data, "labelTxt") if args.format == "dota" else os.path.join(args.data, "labels"),
         crop_size=args.crop_size,
         padding_pct=args.padding_pct
     )
@@ -35,10 +36,11 @@ def evaluate_command(args):
     logger.info("Starting Evaluation Pipeline...")
     
     # 1. Initialize Dataset (for evaluation images)
-    dataset = DotaDataset(
+    dataset_cls = YoloDataset if args.format == "yolo" else DotaDataset
+    dataset = dataset_cls(
         images_dir=os.path.join(args.data, "images"),
-        labels_dir=os.path.join(args.data, "labelTxt"),
-        crop_size=args.crop_size 
+        labels_dir=os.path.join(args.data, "labelTxt") if args.format == "dota" else os.path.join(args.data, "labels"),
+        crop_size=args.crop_size # Not used for full image eval but required by init
     )
     
     evaluate_model(
@@ -55,7 +57,8 @@ def main():
     # Convert Command
     parser_convert = subparsers.add_parser("convert", help="Quantize a model using Focus Calibration")
     parser_convert.add_argument("--model", required=True, help="Path to input model (SavedModel dir or .h5)")
-    parser_convert.add_argument("--data", required=True, help="Path to dataset root (must contain 'images' and 'labelTxt' subdirs)")
+    parser_convert.add_argument("--data", required=True, help="Path to dataset root")
+    parser_convert.add_argument("--format", default="dota", choices=["dota", "yolo"], help="Dataset format (dota: OBB, yolo: standard)")
     parser_convert.add_argument("--output", required=True, help="Path to save quantized TFLite model")
     parser_convert.add_argument("--mode", default="full_int8", choices=["full_int8", "int16x8", "mixed"], help="Quantization mode")
     parser_convert.add_argument("--crop_size", type=int, default=640, help="Calibration crop size")
@@ -67,6 +70,7 @@ def main():
     parser_eval = subparsers.add_parser("evaluate", help="Evaluate a quantized model")
     parser_eval.add_argument("--model", required=True, help="Path to TFLite model")
     parser_eval.add_argument("--data", required=True, help="Path to dataset root")
+    parser_eval.add_argument("--format", default="dota", choices=["dota", "yolo"], help="Dataset format (dota: OBB, yolo: standard)")
     parser_eval.add_argument("--num_samples", type=int, default=50, help="Number of images to evaluate")
     parser_eval.add_argument("--conf_threshold", type=float, default=0.25, help="Confidence threshold")
     parser_eval.add_argument("--crop_size", type=int, default=640, help="Dummy arg for dataset init")

@@ -1,5 +1,5 @@
 from .core import FocusQuantizer
-from .data import DotaDataset
+from .data import DotaDataset, YoloDataset
 from .evaluate import evaluate_model
 from .cli import main
 
